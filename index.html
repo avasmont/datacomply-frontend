@@ -361,6 +361,7 @@
   </div>
 
   <button class="btn-pdf" id="btnPdf" onclick="descargarPdf()">⬇ Descargar Reporte PDF</button>
+  <button class="btn-pdf" id="btnRat" onclick="descargarRat()" style="background:#1D6F42;display:none">⬇ Descargar RAT en Word</button>
   <button class="btn-reset" onclick="resetForm()">← Nuevo diagnóstico</button>
 </div>
 
@@ -612,11 +613,24 @@ function applyBlur() {
   });
 
   // PDF — solo Starter/Pro
+  const isPro = currentPlan === 'pro';
   if (diagnosticoTimestamp && isStarter) {
     document.getElementById('btnPdf').classList.add('active');
   }
+  if (diagnosticoTimestamp && isPro) {
+    document.getElementById('btnRat').style.display = 'block';
+  }
 }
-
+async function descargarRat() {
+  try {
+    const res = await fetch(`${API_BASE}/rat/${TENANT_ID}/${diagnosticoTimestamp}`, {
+      headers: currentToken ? { 'Authorization': currentToken } : {}
+    });
+    const data = await res.json();
+    if (data.rat_url) window.open(data.rat_url, '_blank');
+    else alert('Error generando el RAT: ' + (data.error || 'intenta de nuevo'));
+  } catch(e) { alert('Error: ' + e.message); }
+}
 async function descargarPdf() {
   try {
     const res = await fetch(`${API_BASE}/reporte/${TENANT_ID}/${diagnosticoTimestamp}`, {
