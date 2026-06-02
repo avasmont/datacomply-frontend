@@ -367,7 +367,7 @@
 <footer>DataComply Chile · Powered by Amazon Bedrock + Claude AI · Ley 21.719 vigente desde dic. 2026</footer>
 
 <script>
-const API_BASE = 'https://klr02qs5m7.execute-api.us-east-1.amazonaws.com/v1';
+const API_BASE = 'https://d3rijd1hylqfsx.cloudfront.net';
 const MAX_FILES_PER_AREA = 2;
 const MAX_FILE_SIZE_MB = 5;
 const MAX_TOTAL_SIZE_MB = 10;
@@ -411,7 +411,7 @@ async function register() {
   if (!email || !password) return showMsg('registerMsg', 'Completa todos los campos', 'error');
   try {
     const res = await fetch(`${API_BASE}/auth`, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'register', email, password })
     });
     const data = await res.json();
