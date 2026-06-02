@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataComply Chile — Diagnóstico Ley 21.719</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --bg2: #111118; --bg3: #1a1a24;
+    --border: #2a2a3a; --accent: #00e5a0; --accent2: #0066ff;
+    --danger: #ff4444; --warning: #ffaa00;
+    --text: #f0f0f8; --text2: #8888aa; --text3: #555570;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 20%, rgba(0,229,160,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(0,102,255,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+
+  /* HEADER */
+  header { position: relative; z-index: 10; padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .plan-badge { font-family: 'DM Mono', monospace; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid; }
+  .plan-free { color: var(--text3); border-color: var(--text3); }
+  .plan-starter { color: var(--accent); border-color: var(--accent); }
+  .plan-pro { color: var(--accent2); border-color: var(--accent2); }
+  .btn-header { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; border: 1px solid; }
+  .btn-login { background: transparent; border-color: var(--border); color: var(--text2); }
+  .btn-login:hover { border-color: var(--text2); color: var(--text); }
+  .btn-register { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+  .btn-register:hover { opacity: 0.9; }
+  .btn-logout { font-size: 0.8rem; color: var(--text3); background: none; border: none; cursor: pointer; }
+  .btn-logout:hover { color: var(--text2); }
+
+  /* MODAL AUTH */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1.2rem; }
+  .auth-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .auth-tab { flex: 1; padding: 0.875rem; font-size: 0.85rem; font-weight: 500; background: none; border: none; color: var(--text3); cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .auth-body { padding: 1.75rem 2rem; }
+  .auth-field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .auth-field label { font-size: 0.8rem; color: var(--text2); }
+  .auth-field input { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+  .auth-field input:focus { border-color: var(--accent); }
+  .btn-auth { width: 100%; padding: 0.875rem; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+  .btn-auth:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,229,160,0.25); }
+  .btn-auth:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .auth-msg { font-size: 0.82rem; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 1rem; display: none; }
+  .auth-msg.error { background: rgba(255,68,68,0.1); color: var(--danger); display: block; }
+  .auth-msg.success { background: rgba(0,229,160,0.1); color: var(--accent); display: block; }
+
+  /* HERO */
+  .hero { position: relative; z-index: 10; max-width: 860px; margin: 4rem auto 2rem; padding: 0 2rem; text-align: center; }
+  .hero-tag { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+  .hero-tag::before, .hero-tag::after { content: ''; width: 40px; height: 1px; background: var(--accent); opacity: 0.4; }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .hero p { font-size: 1rem; color: var(--text2); line-height: 1.7; max-width: 560px; margin: 0 auto; font-weight: 300; }
+
+  /* FORM */
+  .form-container { position: relative; z-index: 10; max-width: 760px; margin: 2rem auto 4rem; padding: 0 2rem; }
+  .form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .form-section { padding: 1.75rem 2rem; border-bottom: 1px solid var(--border); }
+  .form-section:last-child { border-bottom: none; }
+  .section-label { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.25rem; }
+  .area-header { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,229,160,0.15); display: flex; align-items: center; justify-content: space-between; }
+  .area-header span { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text3); font-weight: 400; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .field label { font-size: 0.8rem; color: var(--text2); font-weight: 500; }
+  .field input, .field select { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; appearance: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .preguntas { display: flex; flex-direction: column; }
+  .pregunta { display: flex; align-items: flex-start; justify-content: space-between; padding: 0.9rem 0; border-bottom: 1px solid rgba(42,42,58,0.6); gap: 1rem; }
+  .pregunta:last-child { border-bottom: none; }
+  .pregunta-info { flex: 1; }
+  .pregunta-titulo { font-size: 0.875rem; font-weight: 500; color: var(--text); margin-bottom: 0.2rem; line-height: 1.4; }
+  .pregunta-ley { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text3); }
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; margin-top: 2px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: 24px; cursor: pointer; transition: all 0.25s; }
+  .toggle-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: var(--text3); border-radius: 50%; transition: all 0.25s; }
+  .toggle input:checked + .toggle-track { background: rgba(0,229,160,0.15); border-color: var(--accent); }
+  .toggle input:checked + .toggle-track::after { transform: translateX(20px); background: var(--accent); }
+  .upload-locked { font-size: 0.78rem; color: var(--text3); padding: 0.75rem; background: var(--bg3); border-radius: 8px; margin-top: 0.75rem; text-align: center; }
+  .btn-submit { width: 100%; padding: 1rem; background: var(--accent); color: #000; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-top: 1.5rem; }
+  .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0,229,160,0.25); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* LOADING */
+  .loading { display: none; text-align: center; padding: 3rem 2rem; position: relative; z-index: 10; max-width: 760px; margin: 0 auto; }
+  .loading.active { display: block; }
+  .spinner { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text2); font-size: 0.9rem; font-family: 'DM Mono', monospace; }
+  .loading-step { margin-top: 0.5rem; font-size: 0.78rem; color: var(--text3); }
+
+  /* RESULTADO */
+  .resultado { display: none; max-width: 760px; margin: 0 auto 4rem; padding: 0 2rem; position: relative; z-index: 10; }
+  .resultado.active { display: block; }
+  .score-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden; }
+  .score-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .score-nivel { font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.15em; margin-bottom: 0.75rem; }
+  .score-numero { font-family: 'Syne', sans-serif; font-size: 5rem; font-weight: 800; line-height: 1; margin-bottom: 0.5rem; }
+  .score-label { font-size: 0.85rem; color: var(--text2); margin-bottom: 1.5rem; }
+  .resumen { background: var(--bg3); border-radius: 10px; padding: 1.25rem; font-size: 0.88rem; color: var(--text2); line-height: 1.7; text-align: left; }
+
+  /* BLUR GATE */
+  .blur-section { position: relative; margin-bottom: 1rem; }
+  .blur-content { filter: blur(6px); user-select: none; pointer-events: none; }
+  .blur-gate { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; background: rgba(10,10,15,0.7); border-radius: 12px; z-index: 5; backdrop-filter: blur(2px); padding: 2rem; text-align: center; }
+  .blur-gate p { font-size: 0.9rem; color: var(--text2); line-height: 1.5; }
+  .btn-gate { padding: 0.75rem 1.75rem; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+  .btn-gate:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,229,160,0.25); }
+  .btn-gate-secondary { padding: 0.65rem 1.5rem; background: transparent; color: var(--accent2); border: 1px solid var(--accent2); border-radius: 8px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+  .btn-gate-secondary:hover { background: rgba(0,102,255,0.1); }
+
+  .areas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  @media (max-width: 560px) { .areas-grid { grid-template-columns: 1fr; } }
+  .area-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+  .area-header-res { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .area-nombre { font-size: 0.8rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .area-score-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+  .area-bar { height: 4px; background: var(--bg3); border-radius: 2px; margin-bottom: 0.75rem; overflow: hidden; }
+  .area-bar-fill { height: 100%; border-radius: 2px; }
+  .area-detalle { font-size: 0.78rem; color: var(--text2); line-height: 1.5; }
+  .brechas-card { background: var(--bg2); border: 1px solid rgba(255,68,68,0.3); border-radius: 12px; padding: 1.5rem; }
+  .brechas-titulo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--danger); margin-bottom: 1rem; }
+  .brecha-item { display: flex; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text2); line-height: 1.4; }
+  .brecha-item:last-child { border-bottom: none; }
+  .brecha-dot { color: var(--danger); flex-shrink: 0; }
+  .acciones-card { background: var(--bg2); border: 1px solid rgba(0,229,160,0.2); border-radius: 12px; padding: 1.5rem; }
+  .acciones-titulo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem; }
+  .accion-item { display: flex; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text2); line-height: 1.4; }
+  .accion-item:last-child { border-bottom: none; }
+  .accion-num { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--accent); flex-shrink: 0; margin-top: 2px; width: 18px; }
+  .insights-card { background: var(--bg2); border: 1px solid rgba(0,102,255,0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+  .insights-titulo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--accent2); margin-bottom: 1rem; }
+  .insight-item { padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text2); line-height: 1.4; }
+  .insight-item:last-child { border-bottom: none; }
+  .btn-pdf { width: 100%; padding: 1rem; background: var(--accent2); color: #fff; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-top: 0.75rem; display: none; }
+  .btn-pdf.active { display: block; }
+  .btn-pdf:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-reset { width: 100%; padding: 0.85rem; background: transparent; color: var(--text2); border: 1px solid var(--border); border-radius: 10px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; margin-top: 0.75rem; }
+  .btn-reset:hover { border-color: var(--text2); color: var(--text); }
+  footer { position: relative; z-index: 10; text-align: center; padding: 2rem; border-top: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text3); }
+  .color-critico { color: #ff4444; } .color-bajo { color: #ff7700; } .color-medio { color: #ffaa00; } .color-alto { color: #88cc00; } .color-completo { color: #00e5a0; }
+  .fill-critico { background: #ff4444; } .fill-bajo { background: #ff7700; } .fill-medio { background: #ffaa00; } .fill-alto { background: #88cc00; } .fill-completo { background: #00e5a0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Data<span>Comply</span></div>
+  <div class="header-right" id="headerRight">
+    <button class="btn-header btn-login" onclick="openModal('login')">Iniciar sesión</button>
+    <button class="btn-header btn-register" onclick="openModal('register')">Crear cuenta gratis</button>
+  </div>
+</header>
+
+<!-- MODAL AUTH -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Crear cuenta</button>
+    </div>
+    <div class="auth-body" id="loginForm">
+      <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@empresa.cl"/></div>
+      <div class="auth-field"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••"/></div>
+      <button class="btn-auth" onclick="login()">Iniciar sesión</button>
+      <div class="auth-msg" id="loginMsg"></div>
+    </div>
+    <div class="auth-body" id="registerForm" style="display:none">
+      <div class="auth-field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@empresa.cl"/></div>
+      <div class="auth-field"><label>Contraseña (mín. 8 caracteres, 1 mayúscula, 1 número)</label><input type="password" id="regPassword" placeholder="••••••••"/></div>
+      <button class="btn-auth" onclick="register()">Crear cuenta gratis</button>
+      <div class="auth-msg" id="registerMsg"></div>
+    </div>
+    <div class="auth-body" id="confirmForm" style="display:none">
+      <div style="font-size:0.875rem;color:var(--text2);margin-bottom:1rem">Revisa tu email y pega el código de confirmación:</div>
+      <div class="auth-field"><label>Código de verificación</label><input type="text" id="confirmCode" placeholder="123456"/></div>
+      <button class="btn-auth" onclick="confirmAccount()">Confirmar cuenta</button>
+      <div class="auth-msg" id="confirmMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Diagnóstico IA con análisis documental</div>
+  <h1>¿Tu empresa cumple con la <em>nueva ley</em> de datos?</h1>
+  <p>30 preguntas + análisis con IA. Obtén tu score de cumplimiento con la Ley 21.719 de forma gratuita.</p>
+</div>
+
+<!-- FORM -->
+<div class="form-container" id="formContainer">
+  <div class="form-card">
+    <div class="form-section">
+      <div class="section-label">// Datos de la empresa</div>
+      <div class="form-grid">
+        <div class="field"><label>Nombre de la empresa</label><input type="text" id="empresa_nombre" placeholder="Empresa SpA"/></div>
+        <div class="field"><label>Industria</label>
+          <select id="industria">
+            <option value="retail">Retail</option><option value="salud">Salud</option>
+            <option value="fintech">Fintech / Banca</option><option value="educacion">Educación</option>
+            <option value="tecnologia">Tecnología</option><option value="inmobiliaria">Inmobiliaria</option>
+            <option value="logistica">Logística</option><option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="field"><label>Tamaño de empresa</label>
+          <select id="tamano">
+            <option value="1-10">1–10 empleados</option><option value="11-50">11–50 empleados</option>
+            <option value="51-200">51–200 empleados</option><option value="200+">200+ empleados</option>
+          </select>
+        </div>
+        <div class="field"><label>Email de contacto</label><input type="email" id="emailEmpresa" placeholder="contacto@empresa.cl"/></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="area-header">Consentimiento <span>Art. 12-13 · 5 preguntas</span></div>
+      <div class="preguntas">
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Obtienen consentimiento explícito e informado antes de recopilar datos?</div><div class="pregunta-ley">Art. 12</div></div><div class="toggle"><input type="checkbox" id="q1"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿El consentimiento es específico por finalidad (no genérico)?</div><div class="pregunta-ley">Art. 12</div></div><div class="toggle"><input type="checkbox" id="q2"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen mecanismo para que el titular retire su consentimiento fácilmente?</div><div class="pregunta-ley">Art. 12</div></div><div class="toggle"><input type="checkbox" id="q3"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Guardan registro de cuándo y cómo se obtuvo cada consentimiento?</div><div class="pregunta-ley">Art. 12</div></div><div class="toggle"><input type="checkbox" id="q4"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen base legal definida para cada tipo de tratamiento de datos?</div><div class="pregunta-ley">Art. 13</div></div><div class="toggle"><input type="checkbox" id="q5"/><div class="toggle-track"></div></div></label>
+      </div>
+      <div id="upload_consentimiento_wrap" class="upload-locked" style="display:none">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>
+    </div>
+
+    <div class="form-section">
+      <div class="area-header">Política de Privacidad <span>Art. 14 · 5 preguntas</span></div>
+      <div class="preguntas">
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen política de privacidad publicada y accesible?</div><div class="pregunta-ley">Art. 14</div></div><div class="toggle"><input type="checkbox" id="q6"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿La política está escrita en lenguaje claro y comprensible?</div><div class="pregunta-ley">Art. 14</div></div><div class="toggle"><input type="checkbox" id="q7"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿La política indica los plazos de retención de datos?</div><div class="pregunta-ley">Art. 14</div></div><div class="toggle"><input type="checkbox" id="q8"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿La política informa sobre transferencias de datos a terceros?</div><div class="pregunta-ley">Art. 14</div></div><div class="toggle"><input type="checkbox" id="q9"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿La política fue revisada por un abogado en los últimos 12 meses?</div><div class="pregunta-ley">Art. 14</div></div><div class="toggle"><input type="checkbox" id="q10"/><div class="toggle-track"></div></div></label>
+      </div>
+      <div id="upload_politica_wrap" class="upload-locked" style="display:none">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>
+    </div>
+
+    <div class="form-section">
+      <div class="area-header">Derechos ARCO+P <span>Art. 20-24 · 5 preguntas</span></div>
+      <div class="preguntas">
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen proceso formal para atender solicitudes de acceso a datos?</div><div class="pregunta-ley">Art. 20</div></div><div class="toggle"><input type="checkbox" id="q11"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Pueden responder solicitudes ARCO en menos de 30 días?</div><div class="pregunta-ley">Art. 21</div></div><div class="toggle"><input type="checkbox" id="q12"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿El canal para ejercer derechos ARCO es gratuito y accesible?</div><div class="pregunta-ley">Art. 20</div></div><div class="toggle"><input type="checkbox" id="q13"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen proceso para eliminar datos a solicitud del titular?</div><div class="pregunta-ley">Art. 22</div></div><div class="toggle"><input type="checkbox" id="q14"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Ofrecen portabilidad de datos en formato estándar?</div><div class="pregunta-ley">Art. 24</div></div><div class="toggle"><input type="checkbox" id="q15"/><div class="toggle-track"></div></div></label>
+      </div>
+      <div id="upload_arco_wrap" class="upload-locked" style="display:none">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>
+    </div>
+
+    <div class="form-section">
+      <div class="area-header">Seguridad & DPO <span>Art. 46-49 · 5 preguntas</span></div>
+      <div class="preguntas">
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen medidas de seguridad técnicas documentadas?</div><div class="pregunta-ley">Art. 48</div></div><div class="toggle"><input type="checkbox" id="q16"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Realizan evaluaciones de riesgo de privacidad periódicamente?</div><div class="pregunta-ley">Art. 46</div></div><div class="toggle"><input type="checkbox" id="q17"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Los accesos a datos personales están controlados y registrados?</div><div class="pregunta-ley">Art. 48</div></div><div class="toggle"><input type="checkbox" id="q18"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen cifrado para datos sensibles en reposo y en tránsito?</div><div class="pregunta-ley">Art. 48</div></div><div class="toggle"><input type="checkbox" id="q19"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Han designado un Delegado de Protección de Datos (DPO)?</div><div class="pregunta-ley">Art. 49</div></div><div class="toggle"><input type="checkbox" id="q20"/><div class="toggle-track"></div></div></label>
+      </div>
+      <div id="upload_seguridad_wrap" class="upload-locked" style="display:none">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>
+    </div>
+
+    <div class="form-section">
+      <div class="area-header">Notificación de Brechas <span>Art. 50 · 5 preguntas</span></div>
+      <div class="preguntas">
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen protocolo documentado para detectar brechas de seguridad?</div><div class="pregunta-ley">Art. 50</div></div><div class="toggle"><input type="checkbox" id="q21"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Pueden notificar a la Agencia en menos de 72 horas?</div><div class="pregunta-ley">Art. 50</div></div><div class="toggle"><input type="checkbox" id="q22"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen proceso para notificar a los titulares afectados?</div><div class="pregunta-ley">Art. 50</div></div><div class="toggle"><input type="checkbox" id="q23"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Han realizado simulacros de respuesta a incidentes?</div><div class="pregunta-ley">Art. 50</div></div><div class="toggle"><input type="checkbox" id="q24"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen seguro de ciberseguridad o cobertura para incidentes?</div><div class="pregunta-ley">Art. 50</div></div><div class="toggle"><input type="checkbox" id="q25"/><div class="toggle-track"></div></div></label>
+      </div>
+      <div id="upload_brechas_wrap" class="upload-locked" style="display:none">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>
+    </div>
+
+    <div class="form-section">
+      <div class="area-header">Registro de Tratamiento <span>Art. 3, 47 · 5 preguntas</span></div>
+      <div class="preguntas">
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen Registro de Actividades de Tratamiento (RAT) documentado?</div><div class="pregunta-ley">Art. 47</div></div><div class="toggle"><input type="checkbox" id="q26"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿El RAT incluye finalidad, base legal y plazos de cada tratamiento?</div><div class="pregunta-ley">Art. 47</div></div><div class="toggle"><input type="checkbox" id="q27"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿El RAT está actualizado (revisión en últimos 6 meses)?</div><div class="pregunta-ley">Art. 47</div></div><div class="toggle"><input type="checkbox" id="q28"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Aplican principio de minimización (solo recopilan datos necesarios)?</div><div class="pregunta-ley">Art. 3</div></div><div class="toggle"><input type="checkbox" id="q29"/><div class="toggle-track"></div></div></label>
+        <label class="pregunta"><div class="pregunta-info"><div class="pregunta-titulo">¿Tienen política de eliminación de datos cuando ya no son necesarios?</div><div class="pregunta-ley">Art. 3</div></div><div class="toggle"><input type="checkbox" id="q30"/><div class="toggle-track"></div></div></label>
+      </div>
+      <div id="upload_rat_wrap" class="upload-locked" style="display:none">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>
+    </div>
+
+    <div class="form-section">
+      <button class="btn-submit" id="btnSubmit" onclick="enviarDiagnostico()">Analizar con IA →</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <p id="loadingMsg">Analizando con IA · Ley 21.719...</p>
+  <div class="loading-step" id="loadingStep">Esto puede tomar 20-30 segundos</div>
+</div>
+
+<div class="resultado" id="resultado">
+  <!-- Score siempre visible -->
+  <div class="score-card">
+    <div class="score-nivel" id="resNivel"></div>
+    <div class="score-numero" id="resScore"></div>
+    <div class="score-label">Score de cumplimiento / 100</div>
+    <div class="resumen" id="resResumen"></div>
+  </div>
+
+  <!-- Áreas — blur para free/anon -->
+  <div class="blur-section" id="areasBlueSec">
+    <div class="areas-grid" id="resAreas"></div>
+    <div class="blur-gate" id="areasGate" style="display:none">
+      <p>El análisis detallado por área está disponible desde el plan Starter</p>
+      <button class="btn-gate" onclick="openModal('register')">Crear cuenta gratis</button>
+      <button class="btn-gate-secondary" onclick="openModal('login')">Ya tengo cuenta →</button>
+    </div>
+  </div>
+
+  <!-- Brechas — blur para free/anon -->
+  <div class="blur-section" id="brechasBlueSec" style="margin-bottom:1rem">
+    <div class="brechas-card" id="brechasContent">
+      <div class="brechas-titulo">⚠ Brechas críticas detectadas</div>
+      <div id="resBrechas"></div>
+    </div>
+    <div class="blur-gate" id="brechasGate" style="display:none">
+      <p>Las brechas críticas están disponibles desde el plan Starter</p>
+      <button class="btn-gate" onclick="openModal('register')">Crear cuenta gratis</button>
+      <button class="btn-gate-secondary" onclick="openModal('login')">Ya tengo cuenta →</button>
+    </div>
+  </div>
+
+  <!-- Acciones — blur para free/anon -->
+  <div class="blur-section" id="accionesBlueSec" style="margin-bottom:1rem">
+    <div class="acciones-card" id="accionesContent">
+      <div class="acciones-titulo">✓ Plan de acción inmediato</div>
+      <div id="resAcciones"></div>
+    </div>
+    <div class="blur-gate" id="accionesGate" style="display:none">
+      <p>El plan de acción está disponible desde el plan Starter</p>
+      <button class="btn-gate" onclick="openModal('register')">Crear cuenta gratis</button>
+      <button class="btn-gate-secondary" onclick="openModal('login')">Ya tengo cuenta →</button>
+    </div>
+  </div>
+
+  <!-- Insights — solo Starter/Pro -->
+  <div class="insights-card" id="insightsCard" style="display:none">
+    <div class="insights-titulo">🔍 Insights de documentos analizados</div>
+    <div id="resInsights"></div>
+  </div>
+
+  <button class="btn-pdf" id="btnPdf" onclick="descargarPdf()">⬇ Descargar Reporte PDF</button>
+  <button class="btn-reset" onclick="resetForm()">← Nuevo diagnóstico</button>
+</div>
+
+<footer>DataComply Chile · Powered by Amazon Bedrock + Claude AI · Ley 21.719 vigente desde dic. 2026</footer>
+
+<script>
+const API_BASE = 'https://klr02qs5m7.execute-api.us-east-1.amazonaws.com/v1';
+const MAX_FILES_PER_AREA = 2;
+const MAX_FILE_SIZE_MB = 5;
+const MAX_TOTAL_SIZE_MB = 10;
+
+let currentToken = null;
+let currentUser = null;
+let currentPlan = null; // null = anónimo
+let currentLimites = { diagnosticos_mes: 1, documentos: false, pdf: false };
+let diagUsados = 0;
+let uploadedKeys = {};
+let diagnosticoTimestamp = null;
+let pendingEmail = null;
+const TENANT_ID = 'empresa-' + Date.now();
+
+// ── MODAL ─────────────────────────────────────────────────────
+function openModal(tab) {
+  document.getElementById('modalOverlay').classList.add('active');
+  switchTab(tab);
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+function switchTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('confirmForm').style.display = 'none';
+}
+
+function showMsg(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'auth-msg ' + type;
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function register() {
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!email || !password) return showMsg('registerMsg', 'Completa todos los campos', 'error');
+  try {
+    const res = await fetch(`${API_BASE}/auth`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'register', email, password })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    pendingEmail = email;
+    showMsg('registerMsg', data.message, 'success');
+    setTimeout(() => {
+      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('confirmForm').style.display = 'block';
+    }, 1500);
+  } catch(e) { showMsg('registerMsg', e.message, 'error'); }
+}
+
+async function confirmAccount() {
+  const code = document.getElementById('confirmCode').value.trim();
+  if (!code) return showMsg('confirmMsg', 'Ingresa el código', 'error');
+  try {
+    const res = await fetch(`${API_BASE}/auth`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm', email: pendingEmail, code })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showMsg('confirmMsg', data.message, 'success');
+    setTimeout(() => switchTab('login'), 1500);
+  } catch(e) { showMsg('confirmMsg', e.message, 'error'); }
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return showMsg('loginMsg', 'Completa todos los campos', 'error');
+  try {
+    const res = await fetch(`${API_BASE}/auth`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', email, password })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    currentToken = data.token;
+    currentUser = email;
+    currentPlan = data.plan;
+    currentLimites = data.limites;
+    diagUsados = data.diagnosticos_mes || 0;
+    localStorage.setItem('dc_token', data.token);
+    localStorage.setItem('dc_user', email);
+    localStorage.setItem('dc_plan', data.plan);
+    localStorage.setItem('dc_limites', JSON.stringify(data.limites));
+    localStorage.setItem('dc_diag_usados', diagUsados);
+    closeModal();
+    updateHeader();
+    updateFormForPlan();
+    // Si ya hay resultado visible, actualizar blur
+    if (document.getElementById('resultado').classList.contains('active')) {
+      applyBlur();
+    }
+  } catch(e) { showMsg('loginMsg', e.message, 'error'); }
+}
+
+function logout() {
+  localStorage.clear();
+  currentToken = null; currentUser = null; currentPlan = null;
+  currentLimites = { diagnosticos_mes: 1, documentos: false, pdf: false };
+  updateHeader();
+  updateFormForPlan();
+}
+
+function updateHeader() {
+  const right = document.getElementById('headerRight');
+  if (currentUser) {
+    right.innerHTML = `
+      <span class="plan-badge plan-${currentPlan}">${currentPlan.toUpperCase()}</span>
+      <span style="font-size:0.82rem;color:var(--text2)">${currentUser}</span>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>`;
+  } else {
+    right.innerHTML = `
+      <button class="btn-header btn-login" onclick="openModal('login')">Iniciar sesión</button>
+      <button class="btn-header btn-register" onclick="openModal('register')">Crear cuenta gratis</button>`;
+  }
+}
+
+function updateFormForPlan() {
+  const isStarter = currentPlan === 'starter' || currentPlan === 'pro';
+  ['consentimiento','politica','arco','seguridad','brechas','rat'].forEach(area => {
+    const wrap = document.getElementById('upload_' + area + '_wrap');
+    if (!wrap) return;
+    if (isStarter) {
+      wrap.style.display = 'none'; // TODO: mostrar uploader real
+    } else {
+      wrap.style.display = 'block';
+    }
+  });
+}
+
+// Auto-login
+window.addEventListener('load', () => {
+  const token = localStorage.getItem('dc_token');
+  if (token) {
+    currentToken = token;
+    currentUser = localStorage.getItem('dc_user');
+    currentPlan = localStorage.getItem('dc_plan') || 'free';
+    currentLimites = JSON.parse(localStorage.getItem('dc_limites') || '{"diagnosticos_mes":1,"documentos":false,"pdf":false}');
+    diagUsados = parseInt(localStorage.getItem('dc_diag_usados') || '0');
+    updateHeader();
+    updateFormForPlan();
+  }
+});
+
+// ── DIAGNÓSTICO ───────────────────────────────────────────────
+async function enviarDiagnostico() {
+  const nombre = document.getElementById('empresa_nombre').value.trim();
+  if (!nombre) return alert('Por favor ingresa el nombre de la empresa');
+
+  document.getElementById('formContainer').style.display = 'none';
+  document.getElementById('loading').classList.add('active');
+
+  const respuestas = {};
+  for (let i = 1; i <= 30; i++) {
+    const el = document.getElementById('q' + i);
+    if (el) respuestas['q' + i] = el.checked;
+  }
+
+  const payload = {
+    tenant_id: TENANT_ID,
+    empresa_nombre: nombre,
+    industria: document.getElementById('industria').value,
+    tamano: document.getElementById('tamano').value,
+    respuestas,
+    documentos_keys: uploadedKeys,
+  };
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (currentToken) headers['Authorization'] = currentToken;
+
+  try {
+    const res = await fetch(`${API_BASE}/diagnostico`, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    diagnosticoTimestamp = data.timestamp;
+    diagUsados++;
+    if (currentUser) localStorage.setItem('dc_diag_usados', diagUsados);
+    mostrarResultado(data.diagnostico);
+  } catch(e) {
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('formContainer').style.display = 'block';
+    alert('Error al analizar: ' + e.message);
+  }
+}
+
+function colorNivel(nivel) {
+  return { CRITICO:'critico', BAJO:'bajo', MEDIO:'medio', ALTO:'alto', COMPLETO:'completo' }[nivel] || 'medio';
+}
+
+function mostrarResultado(d) {
+  document.getElementById('loading').classList.remove('active');
+  const nivel = d.nivel || 'DESCONOCIDO';
+  const c = colorNivel(nivel);
+  document.getElementById('resNivel').innerHTML = `<span class="color-${c}">● ${nivel}</span>`;
+  document.getElementById('resScore').innerHTML = `<span class="color-${c}">${d.score_global}</span>`;
+  document.getElementById('resResumen').textContent = d.resumen_ejecutivo;
+
+  const areaNames = { consentimiento:'Consentimiento', derechos_arco:'Derechos ARCO', seguridad:'Seguridad', politica_privacidad:'Política Privacidad', notificacion_brechas:'Notif. Brechas', registro_tratamiento:'Registro RAT' };
+  let areasHTML = '';
+  for (const [key, val] of Object.entries(d.areas || {})) {
+    const s = parseInt(val.score) || 0;
+    const ac = colorNivel(s >= 80 ? 'COMPLETO' : s >= 60 ? 'ALTO' : s >= 40 ? 'MEDIO' : s >= 20 ? 'BAJO' : 'CRITICO');
+    areasHTML += `<div class="area-card"><div class="area-header-res"><div class="area-nombre">${areaNames[key]||key}</div><div class="area-score-val color-${ac}">${s}</div></div><div class="area-bar"><div class="area-bar-fill fill-${ac}" style="width:${s}%"></div></div><div class="area-detalle">${val.detalle}</div></div>`;
+  }
+  document.getElementById('resAreas').innerHTML = areasHTML;
+  document.getElementById('resBrechas').innerHTML = (d.brechas_criticas||[]).map(b => `<div class="brecha-item"><span class="brecha-dot">▸</span>${b}</div>`).join('');
+  document.getElementById('resAcciones').innerHTML = (d.acciones_inmediatas||[]).map((a,i) => `<div class="accion-item"><span class="accion-num">0${i+1}</span>${a}</div>`).join('');
+
+  const insights = d.insights_documentos || [];
+  if (insights.length > 0 && !insights[0].includes('No se subieron')) {
+    document.getElementById('insightsCard').style.display = 'block';
+    document.getElementById('resInsights').innerHTML = insights.map(i => `<div class="insight-item">🔹 ${i}</div>`).join('');
+  }
+
+  document.getElementById('resultado').classList.add('active');
+  applyBlur();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function applyBlur() {
+  const isStarter = currentPlan === 'starter' || currentPlan === 'pro';
+
+  // Áreas, brechas, acciones — blur para anónimo y free
+  ['areas', 'brechas', 'acciones'].forEach(section => {
+    const content = document.getElementById(section === 'areas' ? 'resAreas' : section + 'Content');
+    const gate = document.getElementById(section + 'Gate');
+    if (!isStarter) {
+      if (content) content.classList.add('blur-content');
+      if (gate) gate.style.display = 'flex';
+    } else {
+      if (content) content.classList.remove('blur-content');
+      if (gate) gate.style.display = 'none';
+    }
+  });
+
+  // PDF — solo Starter/Pro
+  if (diagnosticoTimestamp && isStarter) {
+    document.getElementById('btnPdf').classList.add('active');
+  }
+}
+
+async function descargarPdf() {
+  try {
+    const res = await fetch(`${API_BASE}/reporte/${TENANT_ID}/${diagnosticoTimestamp}`, {
+      headers: { 'Authorization': currentToken }
+    });
+    const data = await res.json();
+    if (data.pdf_url) window.open(data.pdf_url, '_blank');
+    else alert('El reporte estará disponible en unos minutos.');
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function resetForm() {
+  document.getElementById('resultado').classList.remove('active');
+  document.getElementById('formContainer').style.display = 'block';
+  uploadedKeys = {};
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
