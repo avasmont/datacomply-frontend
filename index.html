@@ -509,7 +509,9 @@ function updateFormForPlan() {
   areas.forEach(({ id, label, key }) => {
     const wrap = document.getElementById('upload_' + id + '_wrap');
     if (!wrap) return;
-    if (isStarter) {
+      wrap.style.display = 'block';
+      if (isStarter) {
+      wrap.style.display = 'block';
       wrap.innerHTML = `
         <div class="upload-area" onclick="document.getElementById('file_${id}').click()" style="margin-top:0.75rem">
           <input type="file" id="file_${id}" accept=".pdf" multiple onchange="handleFileSelect('${key}', this)">
