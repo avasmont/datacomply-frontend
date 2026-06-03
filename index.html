@@ -151,6 +151,23 @@
   footer { position: relative; z-index: 10; text-align: center; padding: 2rem; border-top: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text3); }
   .color-critico { color: #ff4444; } .color-bajo { color: #ff7700; } .color-medio { color: #ffaa00; } .color-alto { color: #88cc00; } .color-completo { color: #00e5a0; }
   .fill-critico { background: #ff4444; } .fill-bajo { background: #ff7700; } .fill-medio { background: #ffaa00; } .fill-alto { background: #88cc00; } .fill-completo { background: #00e5a0; }
+
+  /* MULTI-RUT */
+  .empresas-panel { position: relative; z-index: 10; max-width: 760px; margin: 0 auto 2rem; padding: 0 2rem; display: none; }
+  .empresas-panel.active { display: block; }
+  .empresas-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .empresas-titulo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+  .btn-add-empresa { font-size: 0.82rem; padding: 0.4rem 1rem; background: var(--accent); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .empresas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+  .empresa-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.2s; }
+  .empresa-card:hover { border-color: var(--accent); }
+  .empresa-card.selected { border-color: var(--accent); background: rgba(0,229,160,0.05); }
+  .empresa-card-nombre { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .empresa-card-rut { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text3); }
+  .modal-empresa { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-empresa.active { display: flex; }
+  .modal-empresa-inner { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 100%; max-width: 400px; }
+  .modal-empresa-titulo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem; }
 </style>
 </head>
 <body>
@@ -190,6 +207,34 @@
       <button class="btn-auth" onclick="confirmAccount()">Confirmar cuenta</button>
       <div class="auth-msg" id="confirmMsg"></div>
     </div>
+  </div>
+</div>
+
+
+<!-- PANEL MULTI-RUT -->
+<div class="empresas-panel" id="empresasPanel">
+  <div class="empresas-header">
+    <div class="empresas-titulo">Mis Empresas</div>
+    <button class="btn-add-empresa" onclick="abrirModalEmpresa()">+ Agregar empresa</button>
+  </div>
+  <div class="empresas-grid" id="empresasGrid"></div>
+</div>
+
+<!-- MODAL AGREGAR EMPRESA -->
+<div class="modal-empresa" id="modalEmpresa">
+  <div class="modal-empresa-inner">
+    <div class="modal-empresa-titulo">Agregar empresa</div>
+    <div class="auth-field"><label>Nombre de la empresa</label><input type="text" id="nuevaEmpresaNombre" placeholder="Empresa SpA"/></div>
+    <div class="auth-field"><label>RUT</label><input type="text" id="nuevaEmpresaRut" placeholder="76.123.456-7"/></div>
+    <div class="auth-field"><label>Industria</label>
+      <select id="nuevaEmpresaIndustria">
+        <option value="retail">Retail</option><option value="salud">Salud</option>
+        <option value="fintech">Fintech</option><option value="tecnologia">Tecnología</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <button class="btn-auth" onclick="guardarEmpresa()">Guardar empresa</button>
+    <button class="btn-reset" style="margin-top:0.5rem" onclick="cerrarModalEmpresa()">Cancelar</button>
   </div>
 </div>
 
@@ -465,6 +510,7 @@ async function login() {
     closeModal();
     updateHeader();
     updateFormForPlan();
+    cargarEmpresas();
     // Si ya hay resultado visible, actualizar blur
     if (document.getElementById('resultado').classList.contains('active')) {
       applyBlur();
@@ -683,6 +729,79 @@ async function iniciarPago(plan) {
   } catch(e) {
     alert('Error: ' + e.message);
   }
+}
+
+
+// ── MULTI-RUT ─────────────────────────────────────────────────
+let empresaSeleccionada = null;
+
+async function cargarEmpresas() {
+  if (currentPlan !== 'pro') return;
+  try {
+    const res = await fetch(`${API_BASE}/empresas`, {
+      headers: { 'Authorization': currentToken }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      renderEmpresas(data.empresas);
+      document.getElementById('empresasPanel').classList.add('active');
+    }
+  } catch(e) { console.error('Error cargando empresas:', e); }
+}
+
+function renderEmpresas(empresas) {
+  const grid = document.getElementById('empresasGrid');
+  if (empresas.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:0.85rem">No tienes empresas registradas. Agrega tu primera empresa.</div>';
+    return;
+  }
+  grid.innerHTML = empresas.map(e => `
+    <div class="empresa-card ${empresaSeleccionada?.empresa_id === e.empresa_id ? 'selected' : ''}"
+         onclick="seleccionarEmpresa(${JSON.stringify(e).replace(/"/g, '&quot;')})">
+      <div class="empresa-card-nombre">${e.nombre}</div>
+      <div class="empresa-card-rut">${e.rut}</div>
+    </div>`).join('');
+}
+
+function seleccionarEmpresa(empresa) {
+  empresaSeleccionada = empresa;
+  document.getElementById('empresa_nombre').value = empresa.nombre;
+  document.getElementById('industria').value = empresa.industria || 'otro';
+  renderEmpresas(Array.from(document.querySelectorAll('.empresa-card')).map(c => ({
+    empresa_id: c.dataset.id, nombre: c.querySelector('.empresa-card-nombre').textContent,
+    rut: c.querySelector('.empresa-card-rut').textContent
+  })));
+  cargarEmpresas();
+  window.scrollTo({ top: document.getElementById('formContainer').offsetTop - 20, behavior: 'smooth' });
+}
+
+function abrirModalEmpresa() {
+  document.getElementById('modalEmpresa').classList.add('active');
+}
+
+function cerrarModalEmpresa() {
+  document.getElementById('modalEmpresa').classList.remove('active');
+}
+
+async function guardarEmpresa() {
+  const nombre = document.getElementById('nuevaEmpresaNombre').value.trim();
+  const rut = document.getElementById('nuevaEmpresaRut').value.trim();
+  const industria = document.getElementById('nuevaEmpresaIndustria').value;
+  if (!nombre || !rut) return alert('Nombre y RUT son requeridos');
+  try {
+    const res = await fetch(`${API_BASE}/empresas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': currentToken },
+      body: JSON.stringify({ nombre, rut, industria })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      cerrarModalEmpresa();
+      cargarEmpresas();
+    } else {
+      alert('Error: ' + data.error);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 function resetForm() {
