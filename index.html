@@ -322,8 +322,8 @@
   <div class="blur-section" id="areasBlueSec">
     <div class="areas-grid" id="resAreas"></div>
     <div class="blur-gate" id="areasGate" style="display:none">
-      <p>El análisis detallado por área está disponible desde el plan Starter</p>
-      <button class="btn-gate" onclick="openModal('register')">Crear cuenta gratis</button>
+      <p>El análisis detallado por área está disponible desde el plan Starter ($47.000 CLP/mes)</p>
+      <button class="btn-gate" onclick="iniciarPago('starter')">Contratar Starter →</button>
       <button class="btn-gate-secondary" onclick="openModal('login')">Ya tengo cuenta →</button>
     </div>
   </div>
@@ -661,6 +661,28 @@ async function descargarPdf() {
     if (data.pdf_url) window.open(data.pdf_url, '_blank');
     else alert('El reporte estará disponible en unos minutos.');
   } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function iniciarPago(plan) {
+  if (!currentUser) {
+    openModal('register');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/pagos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(currentToken ? { 'Authorization': currentToken } : {}) },
+      body: JSON.stringify({ action: 'crear_orden', plan, email: currentUser })
+    });
+    const data = await res.json();
+    if (data.ok && data.url_pago) {
+      window.location.href = data.url_pago;
+    } else {
+      alert('Error al crear orden de pago: ' + (data.error || 'intenta de nuevo'));
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
 }
 
 function resetForm() {
