@@ -496,13 +496,27 @@ function updateHeader() {
 
 function updateFormForPlan() {
   const isStarter = currentPlan === 'starter' || currentPlan === 'pro';
-  ['consentimiento','politica','arco','seguridad','brechas','rat'].forEach(area => {
-    const wrap = document.getElementById('upload_' + area + '_wrap');
+  const areas = [
+    { id: 'consentimiento', label: 'formularios de consentimiento', key: 'consentimiento' },
+    { id: 'politica', label: 'política de privacidad', key: 'politica_privacidad' },
+    { id: 'arco', label: 'procedimiento ARCO', key: 'derechos_arco' },
+    { id: 'seguridad', label: 'política de seguridad', key: 'seguridad' },
+    { id: 'brechas', label: 'plan de respuesta a incidentes', key: 'notificacion_brechas' },
+    { id: 'rat', label: 'RAT, inventario de datos', key: 'registro_tratamiento' },
+  ];
+
+  areas.forEach(({ id, label, key }) => {
+    const wrap = document.getElementById('upload_' + id + '_wrap');
     if (!wrap) return;
     if (isStarter) {
-      wrap.style.display = 'none'; // TODO: mostrar uploader real
+      wrap.innerHTML = `
+        <div class="upload-area" onclick="document.getElementById('file_${id}').click()" style="margin-top:0.75rem">
+          <input type="file" id="file_${id}" accept=".pdf" multiple onchange="handleFileSelect('${key}', this)">
+          <div class="upload-label">📎 <span>Subir documentos</span> — ${label} (PDF)</div>
+          <div class="upload-files" id="files_${key}"></div>
+        </div>`;
     } else {
-      wrap.style.display = 'block';
+      wrap.innerHTML = `<div class="upload-locked">📎 Análisis documental disponible en plan Starter <a href="#" onclick="openModal('register')" style="color:var(--accent)">Mejorar →</a></div>`;
     }
   });
 }
