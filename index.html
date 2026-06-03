@@ -495,7 +495,8 @@ function updateHeader() {
 }
 
 function updateFormForPlan() {
-  const isStarter = currentPlan === 'starter' || currentPlan === 'pro';
+  const plan = currentPlan || localStorage.getItem('dc_plan');
+  const isStarter = plan === 'starter' || plan === 'pro';
   const areas = [
     { id: 'consentimiento', label: 'formularios de consentimiento', key: 'consentimiento' },
     { id: 'politica', label: 'política de privacidad', key: 'politica_privacidad' },
