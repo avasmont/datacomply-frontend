@@ -1057,7 +1057,7 @@ async function cargarHistorial() {
     panel.classList.add('active');
     const nivelClass = { CRITICO:'nivel-critico', BAJO:'nivel-bajo', MEDIO:'nivel-medio', ALTO:'nivel-alto', COMPLETO:'nivel-completo' };
     lista.innerHTML = '<div class="historial-lista">' + data.items.map(item => {
-      const fecha = new Date(item.timestamp).toLocaleDateString('es-CL', {day:'2-digit', month:'short', year:'numeric'});
+      const fecha = item.fecha ? new Date(item.fecha).toLocaleDateString('es-CL', {day:'2-digit', month:'short', year:'numeric'}) : 'Sin fecha';
       const nivel = item.diagnostico?.nivel || 'MEDIO';
       const score = item.diagnostico?.score_global || 0;
       const empresa = item.empresa || item.empresa_nombre || 'Empresa';
