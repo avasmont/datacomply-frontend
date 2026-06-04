@@ -977,6 +977,7 @@ function mostrarResultado(d) {
   document.getElementById('resAreas').innerHTML=areasHTML;
   document.getElementById('resultado').classList.add('active');
   applyBlur();
+  cargarHistorial();
   document.getElementById('herramienta').scrollIntoView({behavior:'smooth'});
 }
 
