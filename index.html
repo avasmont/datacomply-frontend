@@ -286,6 +286,28 @@ footer a { color: rgba(255,255,255,0.6); }
 /* COLORES POR NIVEL */
 .color-critico { color: var(--red); } .color-bajo { color: #ea580c; } .color-medio { color: var(--yellow); } .color-alto { color: #65a30d; } .color-completo { color: var(--green); }
 .fill-critico { background: var(--red); } .fill-bajo { background: #ea580c; } .fill-medio { background: var(--yellow); } .fill-alto { background: #65a30d; } .fill-completo { background: var(--green); }
+
+  /* HISTORIAL */
+  .historial-panel { max-width: 760px; margin: 0 auto 2rem; display: none; }
+  .historial-panel.active { display: block; }
+  .historial-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .historial-titulo { font-weight: 700; font-size: 1rem; color: var(--gray-900); }
+  .historial-lista { display: flex; flex-direction: column; gap: 0.75rem; }
+  .historial-item { background: white; border: 1.5px solid var(--gray-200); border-radius: 10px; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; transition: all 0.15s; }
+  .historial-item:hover { border-color: var(--blue-400); }
+  .historial-item-left { display: flex; flex-direction: column; gap: 0.25rem; }
+  .historial-empresa { font-weight: 700; font-size: 0.9rem; color: var(--gray-900); }
+  .historial-fecha { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--gray-400); }
+  .historial-item-right { display: flex; align-items: center; gap: 1rem; }
+  .historial-score { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.1rem; }
+  .historial-nivel { font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600; }
+  .nivel-critico { background: #fef2f2; color: var(--red); }
+  .nivel-bajo { background: #fff7ed; color: #ea580c; }
+  .nivel-medio { background: #fffbeb; color: var(--yellow); }
+  .nivel-alto { background: #f0fdf4; color: #65a30d; }
+  .nivel-completo { background: #f0fdf4; color: var(--green); }
+  .historial-locked { background: var(--gray-50); border: 1.5px dashed var(--gray-200); border-radius: 10px; padding: 1.25rem; text-align: center; font-size: 0.875rem; color: var(--gray-400); }
+  .historial-locked a { color: var(--blue-600); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -456,7 +478,7 @@ footer a { color: rgba(255,255,255,0.6); }
           <div class="plan-feature"><span class="plan-feature-check">✓</span><span class="plan-feature-text">Análisis completo por área</span></div>
           <div class="plan-feature"><span class="plan-feature-check">✓</span><span class="plan-feature-text">Subida de documentos PDF</span></div>
           <div class="plan-feature"><span class="plan-feature-check">✓</span><span class="plan-feature-text">Reporte PDF profesional</span></div>
-          <div class="plan-feature"><span class="plan-feature-check">✓</span><span class="plan-feature-text">Historial 6 meses</span></div>
+          <div class="plan-feature"><span class="plan-feature-check">✓</span><span class="plan-feature-text">Historial 3 meses</span></div>
           <div class="plan-feature"><span class="plan-feature-x">✕</span><span class="plan-feature-text disabled">Multi-RUT</span></div>
         </div>
         <button class="btn-plan btn-plan-primary" onclick="iniciarPago('starter')">Contratar Starter →</button>
@@ -494,6 +516,15 @@ footer a { color: rgba(255,255,255,0.6); }
     <div class="section-tag">Herramienta gratuita</div>
     <h2 class="section-title" style="font-size:2rem">Diagnóstico de cumplimiento</h2>
     <p style="color:var(--gray-500);margin-top:0.5rem">Completa el formulario y obtén tu score en minutos.</p>
+  </div>
+
+
+  <!-- HISTORIAL -->
+  <div class="historial-panel" id="historialPanel">
+    <div class="historial-header">
+      <div class="historial-titulo">Historial de diagnósticos</div>
+    </div>
+    <div id="historialLista"></div>
   </div>
 
   <!-- MULTI-RUT PANEL -->
@@ -737,7 +768,7 @@ async function login() {
     localStorage.setItem('dc_token', data.token); localStorage.setItem('dc_user', email);
     localStorage.setItem('dc_plan', data.plan); localStorage.setItem('dc_limites', JSON.stringify(data.limites));
     localStorage.setItem('dc_diag_usados', diagUsados);
-    closeModal(); updateHeader(); updateFormForPlan(); cargarEmpresas();
+    closeModal(); updateHeader(); updateFormForPlan(); cargarEmpresas(); cargarHistorial(); cargarHistorial();
     if (document.getElementById('resultado').classList.contains('active')) applyBlur();
   } catch(e) { showMsg('loginMsg', e.message, 'error'); }
 }
@@ -814,7 +845,7 @@ window.addEventListener('load', () => {
     currentPlan = localStorage.getItem('dc_plan') || 'free';
     currentLimites = JSON.parse(localStorage.getItem('dc_limites') || '{"diagnosticos_mes":1,"documentos":false,"pdf":false}');
     diagUsados = parseInt(localStorage.getItem('dc_diag_usados') || '0');
-    updateHeader(); updateFormForPlan(); cargarEmpresas();
+    updateHeader(); updateFormForPlan(); cargarEmpresas(); cargarHistorial();
   }
 });
 
@@ -996,6 +1027,67 @@ async function iniciarPago(plan) {
     if (data.ok&&data.url_pago) window.location.href=data.url_pago;
     else alert('Error al crear orden de pago: '+(data.error||'intenta de nuevo'));
   } catch(e) { alert('Error: '+e.message); }
+}
+
+
+// ── HISTORIAL ─────────────────────────────────────────────────
+async function cargarHistorial() {
+  const panel = document.getElementById('historialPanel');
+  const lista = document.getElementById('historialLista');
+  
+  if (!currentUser) return;
+  
+  if (currentPlan === 'free' || !currentPlan) {
+    panel.classList.add('active');
+    lista.innerHTML = '<div class="historial-locked">El historial de diagnósticos está disponible desde el plan Starter. <a href="#planes">Ver planes →</a></div>';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/historial?user_id=${encodeURIComponent(currentUser)}`, {
+      headers: currentToken ? { 'Authorization': currentToken } : {}
+    });
+    const data = await res.json();
+    if (!data.ok || !data.items || data.items.length === 0) {
+      panel.classList.add('active');
+      lista.innerHTML = '<div class="historial-locked">Aún no tienes diagnósticos guardados. ¡Haz tu primer análisis!</div>';
+      return;
+    }
+    panel.classList.add('active');
+    const nivelClass = { CRITICO:'nivel-critico', BAJO:'nivel-bajo', MEDIO:'nivel-medio', ALTO:'nivel-alto', COMPLETO:'nivel-completo' };
+    lista.innerHTML = '<div class="historial-lista">' + data.items.map(item => {
+      const fecha = new Date(item.timestamp).toLocaleDateString('es-CL', {day:'2-digit', month:'short', year:'numeric'});
+      const nivel = item.diagnostico?.nivel || 'MEDIO';
+      const score = item.diagnostico?.score_global || 0;
+      const empresa = item.empresa || item.empresa_nombre || 'Empresa';
+      return `<div class="historial-item" onclick="verDiagnostico('${item.tenant_id}','${item.timestamp}')">
+        <div class="historial-item-left">
+          <div class="historial-empresa">${empresa}</div>
+          <div class="historial-fecha">${fecha}</div>
+        </div>
+        <div class="historial-item-right">
+          <div class="historial-score color-${nivel.toLowerCase()}">${score}</div>
+          <div class="historial-nivel ${nivelClass[nivel]||'nivel-medio'}">${nivel}</div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  } catch(e) {
+    console.error('Error cargando historial:', e);
+  }
+}
+
+function verDiagnostico(tenantId, timestamp) {
+  diagnosticoTimestamp = timestamp;
+  // Por ahora solo mostramos que se puede descargar el PDF
+  if (currentLimites.pdf) {
+    if (confirm('¿Descargar el reporte PDF de este diagnóstico?')) {
+      fetch(`${API_BASE}/reporte/${tenantId}/${timestamp}`, {
+        headers: { 'Authorization': currentToken }
+      }).then(r => r.json()).then(data => {
+        if (data.pdf_url) window.open(data.pdf_url, '_blank');
+      });
+    }
+  }
 }
 
 function resetForm() {
