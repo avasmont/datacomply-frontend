@@ -54,7 +54,7 @@ body { font-family: 'Inter', sans-serif; color: var(--gray-900); background: var
 
 /* ── HERO ── */
 .hero { background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 100%); color: white; padding: 6rem 2rem 5rem; text-align: center; position: relative; overflow: hidden; }
-.hero::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+.hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
 .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 500; margin-bottom: 1.5rem; }
 .hero-badge-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
@@ -358,6 +358,9 @@ footer a { color: rgba(255,255,255,0.6); }
       <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@empresa.cl"/></div>
       <div class="auth-field"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••"/></div>
       <button class="btn-auth" onclick="login()">Iniciar sesión</button>
+      <div style="text-align:center;margin-top:0.75rem">
+        <button onclick="switchTab('forgot')" style="background:none;border:none;color:var(--blue-600);font-size:0.82rem;cursor:pointer;text-decoration:underline">¿Olvidaste tu contraseña?</button>
+      </div>
       <div class="auth-msg" id="loginMsg"></div>
     </div>
     <div class="auth-body" id="registerForm" style="display:none">
@@ -371,6 +374,23 @@ footer a { color: rgba(255,255,255,0.6); }
       <div class="auth-field"><label>Código de verificación</label><input type="text" id="confirmCode" placeholder="123456"/></div>
       <button class="btn-auth" onclick="confirmAccount()">Confirmar cuenta</button>
       <div class="auth-msg" id="confirmMsg"></div>
+    </div>
+
+    <!-- FORGOT PASSWORD -->
+    <div class="auth-body" id="forgotForm" style="display:none">
+      <div style="font-size:0.875rem;color:var(--gray-500);margin-bottom:1rem">Ingresa tu email y te enviaremos un código para restablecer tu contraseña.</div>
+      <div class="auth-field"><label>Email</label><input type="email" id="forgotEmail" placeholder="tu@empresa.cl"/></div>
+      <button class="btn-auth" onclick="enviarCodigoReset()">Enviar código</button>
+      <div class="auth-msg" id="forgotMsg"></div>
+    </div>
+
+    <!-- RESET PASSWORD -->
+    <div class="auth-body" id="resetForm" style="display:none">
+      <div style="font-size:0.875rem;color:var(--gray-500);margin-bottom:1rem">Ingresa el código que recibiste y tu nueva contraseña.</div>
+      <div class="auth-field"><label>Código de verificación</label><input type="text" id="resetCode" placeholder="123456"/></div>
+      <div class="auth-field"><label>Nueva contraseña</label><input type="password" id="resetPassword" placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"/></div>
+      <button class="btn-auth" onclick="confirmarReset()">Cambiar contraseña</button>
+      <div class="auth-msg" id="resetMsg"></div>
     </div>
   </div>
 </div>
@@ -744,6 +764,40 @@ function switchTab(tab) {
   document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
   document.getElementById('confirmForm').style.display = 'none';
+  document.getElementById('forgotForm').style.display = tab === 'forgot' ? 'block' : 'none';
+  document.getElementById('resetForm').style.display = tab === 'reset' ? 'block' : 'none';
+}
+
+async function enviarCodigoReset() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email) return showMsg('forgotMsg', 'Ingresa tu email', 'error');
+  try {
+    const res = await fetch(`${API_BASE}/auth`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'forgot_password', email})
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    pendingEmail = email;
+    showMsg('forgotMsg', 'Código enviado. Revisa tu email.', 'success');
+    setTimeout(() => switchTab('reset'), 1500);
+  } catch(e) { showMsg('forgotMsg', e.message, 'error'); }
+}
+
+async function confirmarReset() {
+  const code = document.getElementById('resetCode').value.trim();
+  const password = document.getElementById('resetPassword').value;
+  if (!code || !password) return showMsg('resetMsg', 'Completa todos los campos', 'error');
+  try {
+    const res = await fetch(`${API_BASE}/auth`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'confirm_forgot_password', email: pendingEmail, code, password})
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showMsg('resetMsg', '¡Contraseña cambiada! Ya puedes iniciar sesión.', 'success');
+    setTimeout(() => switchTab('login'), 2000);
+  } catch(e) { showMsg('resetMsg', e.message, 'error'); }
 }
 function showMsg(id, msg, type) { const el = document.getElementById(id); el.textContent = msg; el.className = 'auth-msg ' + type; }
 
