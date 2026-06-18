@@ -1292,7 +1292,7 @@ async function cargarContadorChat() {
       const badge = document.getElementById("chatBadge");
       const counter = document.getElementById("chatCounter");
       if (badge) badge.textContent = `${chatMensajesRestantes} mensajes restantes`;
-      if (counter) counter.textContent = `${chatMensajesRestantes}/50 mensajes este mes`;
+      if (counter) counter.textContent = `${chatMensajesRestantes}/100 mensajes este mes`;
     }
   } catch(e) { console.error("Error cargando contador:", e); }
 }
@@ -1352,7 +1352,7 @@ function iniciarChat() {
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
-    <div class="chat-counter" id="chatCounter">${chatMensajesRestantes}/50 mensajes este mes</div>`;
+    <div class="chat-counter" id="chatCounter">${chatMensajesRestantes}/100 mensajes este mes</div>`;
 }
 
 function cambiarEmpresaChat() {
@@ -1416,7 +1416,7 @@ async function enviarMensajeChat() {
       const badge = document.getElementById('chatBadge');
       const counter = document.getElementById('chatCounter');
       if (badge) badge.textContent = `${chatMensajesRestantes} mensajes restantes`;
-      if (counter) counter.textContent = `${chatMensajesRestantes}/50 mensajes este mes`;
+      if (counter) counter.textContent = `${chatMensajesRestantes}/100 mensajes este mes`;
     } else {
       agregarMensajeChat('bot', '⚠️ ' + (data.error || 'Error al procesar tu consulta.'));
     }
