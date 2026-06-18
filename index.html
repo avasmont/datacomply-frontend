@@ -879,7 +879,7 @@ async function login() {
     localStorage.setItem('dc_token', data.token); localStorage.setItem('dc_user', email);
     localStorage.setItem('dc_plan', data.plan); localStorage.setItem('dc_limites', JSON.stringify(data.limites));
     localStorage.setItem('dc_diag_usados', diagUsados);
-    closeModal(); updateHeader(); updateFormForPlan(); cargarEmpresas(); cargarHistorial(); setTimeout(iniciarChat, 500);
+    closeModal(); updateHeader(); updateFormForPlan(); cargarEmpresas(); cargarHistorial();
     if (document.getElementById('resultado').classList.contains('active')) applyBlur();
   } catch(e) { showMsg('loginMsg', e.message, 'error'); }
 }
@@ -956,7 +956,7 @@ window.addEventListener('load', () => {
     currentPlan = localStorage.getItem('dc_plan') || 'free';
     currentLimites = JSON.parse(localStorage.getItem('dc_limites') || '{"diagnosticos_mes":1,"documentos":false,"pdf":false}');
     diagUsados = parseInt(localStorage.getItem('dc_diag_usados') || '0');
-    updateHeader(); updateFormForPlan(); cargarEmpresas(); cargarHistorial(); setTimeout(iniciarChat, 500);
+    updateHeader(); updateFormForPlan(); cargarEmpresas(); cargarHistorial();
   }
 });
 
@@ -1177,6 +1177,7 @@ async function cargarHistorial() {
 
     let html = '';
     window._chatEmpresas = grupos;
+    iniciarChat();
     Object.entries(grupos).forEach(([empresa, items]) => {
       const ultimo = items[0];
       const nivelUltimo = ultimo.diagnostico?.nivel || 'MEDIO';
@@ -1216,7 +1217,6 @@ async function cargarHistorial() {
     lista.innerHTML = html;
 
     // Renderizar gráficos
-    window._chatEmpresas = grupos;
     Object.entries(grupos).forEach(([empresa, items]) => {
       if (items.length < 2) return;
       const grupoId = empresa.replace(/[^a-zA-Z0-9]/g, '_');
