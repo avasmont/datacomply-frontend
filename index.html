@@ -1278,7 +1278,27 @@ let chatHistorial = [];
 let chatMensajesRestantes = 50;
 window._chatEmpresas = {};
 
+async function cargarContadorChat() {
+  if (!currentToken || currentPlan !== "pro") return;
+  try {
+    const res = await fetch(`${API_DEV}/agente`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": currentToken },
+      body: JSON.stringify({ action: "get_contador" })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      chatMensajesRestantes = data.mensajes_restantes;
+      const badge = document.getElementById("chatBadge");
+      const counter = document.getElementById("chatCounter");
+      if (badge) badge.textContent = `${chatMensajesRestantes} mensajes restantes`;
+      if (counter) counter.textContent = `${chatMensajesRestantes}/50 mensajes este mes`;
+    }
+  } catch(e) { console.error("Error cargando contador:", e); }
+}
+
 function iniciarChat() {
+  cargarContadorChat();
   const panel = document.getElementById('chatPanel');
   if (!currentUser || !panel) return;
 
