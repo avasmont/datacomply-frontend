@@ -1353,6 +1353,38 @@ function iniciarChat() {
       </button>
     </div>
     <div class="chat-counter" id="chatCounter">${chatMensajesRestantes}/100 mensajes este mes</div>`;
+
+  cargarHistorialPersistente();
+}
+
+async function cargarHistorialPersistente() {
+  const empresaSelect = document.getElementById('chatEmpresaSelect');
+  const empresaNombre = empresaSelect ? empresaSelect.value : (Object.keys(window._chatEmpresas||{})[0] || null);
+  try {
+    const res = await fetch(`${API_DEV}/agente`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': currentToken },
+      body: JSON.stringify({ action: 'get_historial', empresa_nombre: empresaNombre })
+    });
+    const data = await res.json();
+    if (data.ok && data.historial && data.historial.length > 0) {
+      const messages = document.getElementById('chatMessages');
+      if (!messages) return;
+      messages.innerHTML = '';
+      if (data.resumen) {
+        const resumenDiv = document.createElement('div');
+        resumenDiv.style = 'background:var(--gray-100);border-radius:10px;padding:0.75rem 1rem;font-size:0.78rem;color:var(--gray-500);margin-bottom:0.5rem';
+        resumenDiv.innerHTML = `<strong>📋 Resumen de conversaciones anteriores:</strong><br>${data.resumen}`;
+        messages.appendChild(resumenDiv);
+      }
+      data.historial.forEach(h => {
+        chatHistorial.push(h);
+        agregarMensajeChat(h.role === 'user' ? 'user' : 'bot', h.content);
+      });
+    }
+  } catch(e) {
+    console.error('Error cargando historial persistente:', e);
+  }
 }
 
 function cambiarEmpresaChat() {
